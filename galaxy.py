@@ -13,30 +13,42 @@ class StarSystem:
     """A object coordinations
     """
 
-    def __init__(self, x = 0, y = 0, z = 0):
+    def __init__(self, x = 0, y = 0, z = 0):        
         self.x, self.y, self.z = x, y, z
 
+        self.uid = 0
+        self.coordx = 0
+        self.coordy = 0
+        self.sys_num = 0
+       
+        self.name = ""      
         self.stardesc = 0
         self.multiple = 0
-
-        self.name = ""
-        self.sys_num = 0
-
-
-        self.UniqueID = 0
-        self.population = ""
-        self.techlevel = 0 #[0,255]
-        self.Chance_CargoCheck = 0
-
 
 
     def info(self):
         output = "Name: %s\n" % self.name
         output += "Coordinates: [%d, %d, %d]\n" % (self.x,self.y,self.z)
         output += "Star type: %s\n" % StarDesc[self.stardesc]
+        
+        star = StarSystem()
+        star.x = 0
+        star.y = 16
+        star.z = -54
+ 
+        output += "Distance to Sol: %f\n" % self.distance(star)
         #output += "Star size: %d\n" % SizeForStar[self.stardesc]
         #output += "Star color: %s\n" % ColorForStar[self.stardesc].show()
         return output
+
+    def distance(self, star):
+        factor = 16.05
+
+        dist = abs(self.x - star.x)**2 + abs(self.y - star.y)**2\
+            + abs(self.z - star.z)**2
+        dist = math.sqrt(dist) / factor
+
+        return dist
 
 class Seed:
     def __init__(self,seed):
@@ -71,10 +83,12 @@ class Galaxy:
         self.coords = []
 
         self.left = 0
+        self.up = 0
 
 
     def getDensity(self, coordx, coordy, galaxyScale):
-        """Magic function holding the universe together."""
+        """Magic function holding the universe together.
+        Dissasembled by Jongware from original data."""
     
         if ((coordx > 0x1fff) or (coordy > 0x1fff)):
             return 0
@@ -89,10 +103,8 @@ class Galaxy:
         coordx = (coordx * 512) & 0x7e00
         coordy = (coordy * 512) & 0x7e00
 
-
         ebx = c_ulong((p2-p1)*coordx + (p3-p1)*coordy).value
         esi = c_ulong((coordx*coordy) >> 15).value
-
 
         edi = c_ulong(p4 - p3 - p2 + p1).value
         esi = c_ulong(esi * edi).value
@@ -127,6 +139,7 @@ class Galaxy:
         p1 = c_ulong(p1 >> 10).value
         return p1
 
+    # Create pseudorandom sector
     def createSector(self, coordx, coordy):
         self.coords = []
 
@@ -147,6 +160,7 @@ class Galaxy:
 
             self.coords[i].name = name.capitalize()
 
+    # Get or create sector
     def getSector(self, coordx, coordy):
         self.coords = []
         
@@ -158,9 +172,14 @@ class Galaxy:
         for j in range(KnownSpaceNameOffset[Off+1] - KnownSpaceNameOffset[Off]):
             star = StarSystem()
 
+            star.uid = (j<<26) + (coordy<<13) + (coordx)
+
             star.x = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][0]
             star.y = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][1]
             star.z = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][2]
+
+            self.coordx = coordx
+            self.coordy = coordy
 
             star.num = j
             star.stardesc = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][3]
@@ -170,52 +189,47 @@ class Galaxy:
 
             self.coords.append(star)
 
-        return j
         
     def test(self):
-        self.getSector(5912,5412)
+        self.getSector(5911,5412)
+        
+        for starSystem in self.coords:
+            print starSystem.info()
 
-        video = VideoDriver()
-
-        while 1:
-            video.DoEvents()
-            self.update(video.KeyStatus)
-
-            video.clock.tick(50)
-            video.screen.fill((0,32,0))
-
-            coords = []
-            for star in self.coords:
-                coords.append((star.x, star.y, star.z))
-            
-            sector = Object3D()
-            sector.addNodes(coords)
-
-            pv = ProjectionView(video.screen_size)
-            pv.addModel('sector',sector)
-
-
-            pv.translate('sector', 'x', self.left)
-            
-
-
-            pv.display(video.screen)
-            
-            video.flush()
+#        #video = VideoDriver()
+#
+#        while 0:
+#            video.DoEvents()
+#            self.update(video.KeyStatus)
+#
+#            video.clock.tick(50)
+#            video.screen.fill((0,32,0))
+#
+#            coords = []
+#            for star in self.coords:
+#                coords.append((star.x, star.y, star.z))
+#            
+#            sector = Object3D()
+#            sector.addNodes(coords)
+#
+#            pv = ProjectionView(video.screen_size)
+#            pv.addModel('sector',sector)
+#
+#
+#            pv.translate('sector', 'x', self.left)
+#            pv.translate('sector', 'y', self.up)
+#           
+#
+#
+#            pv.display(video.screen)
+#            
+#            video.flush()
 
     def update(self, KeyStatus):
         if KeyStatus["Left"] and not KeyStatus["Right"]:
             self.left += 1
-
-
-
-
-
+        if KeyStatus["Up"] and not KeyStatus["Down"]:
+            self.up += 1
     
-
-        
-
-
-
 c = Galaxy()
 c.test()
