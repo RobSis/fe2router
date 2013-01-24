@@ -1,10 +1,18 @@
 import math, random
-from ctypes import c_ulong, c_long
+from ctypes import c_ulong, c_long, c_byte
 
 
 from milkyway import *
 from graphs import *
 
+
+def ROR(x, n, bits=64):
+    mask = (2L**n) - 1
+    mask_bits = x & mask
+    return (x >> n) | (mask_bits << (bits - n))
+
+def ROL(x, n, bits=64):
+    return ROR(x, bits - n, bits)
 
 # Galaxy size: 8192x8192
 # Sol: (5912, 5412)
@@ -35,6 +43,8 @@ class StarSystem:
         star.x = 0
         star.y = 16
         star.z = -54
+        star.coordx = 5912
+        star.coordy = 5412
  
         output += "Distance to Sol: %f\n" % self.distance(star)
         #output += "Star size: %d\n" % SizeForStar[self.stardesc]
@@ -42,37 +52,37 @@ class StarSystem:
         return output
 
     def distance(self, star):
+        """not working"""
         factor = 16.05
 
-        dist = abs(self.x - star.x)**2 + abs(self.y - star.y)**2\
-            + abs(self.z - star.z)**2
+        x = star.x + (star.coordx - self.coordx)*128
+        y = star.y + (star.coordy - self.coordy)*128
+
+        print (star.coordx - self.coordx)
+        print (star.coordy - self.coordy)
+
+
+        z = star.z
+
+        dist = abs(self.x - x)**2 + abs(self.y - y)**2\
+            + abs(self.z - z)**2
         dist = math.sqrt(dist) / factor
 
         return dist
 
 class Seed:
     def __init__(self,seed):
-        self.s1 = seed
-        self.s2 = seed - int(seed/2)
+        self.s0 = 0
+        self.s1 = 0
 
-    def inrange(self, start, stop):
-        self._flush()
-        return random.randint(start, stop)
+    def rotate_some(self):
+        tmp1 = c_ulong(c_ulong(self.s0 << 3).value | c_ulong(self.s0 >> 29).value).value
+        tmp2 = c_ulong(self.s0 + self.s1).value
+        tmp1 = c_ulong(tmp1 + tmp2).value
+        
+        self.s0 = tmp1
+        self.s1 = c_ulong(c_ulong(tmp2 << 5).value | c_ulong(tmp2 >> 27).value).value
 
-    def fromlist(self, somelist):
-        self._flush()
-        return random.choice(somelist)
-
-    def reseed(self, seed, seed2):
-        random.seed((seed ** 8) +  seed2)
-        self.s1 = random.random()
-        self._flush()
-
-
-    def _flush(self):
-        random.seed(self.s1)
-        self.s1 = random.random()*12
-        random.seed(self.s1)
 
 
 class Galaxy:
@@ -139,26 +149,54 @@ class Galaxy:
         p1 = c_ulong(p1 >> 10).value
         return p1
 
+    def getSystemName(self, coordx, coordy, sysNum):
+        coordx = c_ulong(coordx + sysNum).value
+        coordy = c_ulong(coordy + coordx).value
+        coordx = ROL(coordx, 3)
+        coordx += coordy
+        coordy = ROL(coordy, 5)
+        coordy += coordx
+        coordy = ROL(coordy, 4)
+        coordx = ROL(coordx, sysNum)
+        coordx += coordy
+
+        name = ""
+        for i in range(3):
+            name += namepart[(coordx >> 2) & 31]
+            coordx = ROR(coordx, 5)
+        return name.capitalize()
+
+
     # Create pseudorandom sector
     def createSector(self, coordx, coordy):
         self.coords = []
 
+        self.seed.s0 = c_ulong(c_ulong(coordx << 16).value + coordy).value
+        self.seed.s1 = c_ulong(c_ulong(coordy << 16).value + coordx).value
+
+        self.seed.rotate_some()
+        self.seed.rotate_some()
+        self.seed.rotate_some()
+
         number_of_systems = self.getDensity(coordx, coordy, 0)
         for i in range(number_of_systems):
-            self.seed.reseed(coordx | i, coordy ^ i)
+            self.seed.rotate_some()
+            
+            star = StarSystem()
 
-            self.coords.append(StarSystem())
+            star.z = c_byte(c_ulong(self.seed.s0 & 0xff0000).value >> 16).value
+            star.y = c_byte(self.seed.s0 >> 8).value
+            star.y /= 2
+            star.x = c_byte(c_ulong(self.seed.s0 & 0x0001fe).value >> 1).value
+            star.x /= 2
 
-            self.coords[i].x = self.seed.inrange(-63, 63)
-            self.coords[i].y = self.seed.inrange(-63, 63)
-            self.coords[i].z = self.seed.inrange(-128, 127)
+            star.multiple = StarChance_Multiples[c_ulong(self.seed.s1 & 0x1f).value]
+            star.stardesc = StarChance_Type[c_ulong(self.seed.s1 >> 16).value & 0x1f]
 
-            self.coords[i].multiple = self.seed.fromlist(StarChance_Multiples)
-            self.coords[i].stardesc = self.seed.fromlist(StarChance_Type)
+            star.sys_num = i
+            star.name = self.getSystemName(coordx, coordy, i)
 
-            name = self.seed.fromlist(namepart) + self.seed.fromlist(namepart) + self.seed.fromlist(namepart)
-
-            self.coords[i].name = name.capitalize()
+            self.coords.append(star)
 
     # Get or create sector
     def getSector(self, coordx, coordy):
@@ -178,10 +216,10 @@ class Galaxy:
             star.y = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][1]
             star.z = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][2]
 
-            self.coordx = coordx
-            self.coordy = coordy
+            star.coordx = coordx
+            star.coordy = coordy
 
-            star.num = j
+            star.sys_num = j
             star.stardesc = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][3]
             star.multiple = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][4]
 
@@ -190,8 +228,8 @@ class Galaxy:
             self.coords.append(star)
 
         
-    def test(self):
-        self.getSector(5911,5412)
+    def test(self, x, y):
+        self.getSector(5912+x,5412+y)
         
         for starSystem in self.coords:
             print starSystem.info()
@@ -232,4 +270,4 @@ class Galaxy:
             self.up += 1
     
 c = Galaxy()
-c.test()
+c.test(0, 3)
