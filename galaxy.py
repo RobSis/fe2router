@@ -1,17 +1,14 @@
 import math, random
-from ctypes import c_ulong, c_long, c_byte
-
+from ctypes import c_ulong, c_long, c_byte, c_ushort
 
 from milkyway import *
-from graphs import *
 
-
-def ROR(x, n, bits=64):
+def ROR(x, n, bits=16):
     mask = (2L**n) - 1
     mask_bits = x & mask
-    return (x >> n) | (mask_bits << (bits - n))
+    return c_ushort(x >> n).value | c_ushort(mask_bits << (bits - n)).value
 
-def ROL(x, n, bits=64):
+def ROL(x, n, bits=16):
     return ROR(x, bits - n, bits)
 
 # Galaxy size: 8192x8192
@@ -35,43 +32,17 @@ class StarSystem:
 
 
     def info(self):
-        output = "Name: %s\n" % self.name
+        output = "Name: %s (%s)\n" % (self.name,self.uid)
         output += "Coordinates: [%d, %d, %d]\n" % (self.x,self.y,self.z)
         output += "Star type: %s\n" % StarDesc[self.stardesc]
-        
-        star = StarSystem()
-        star.x = 0
-        star.y = 16
-        star.z = -54
-        star.coordx = 5912
-        star.coordy = 5412
- 
-        output += "Distance to Sol: %f\n" % self.distance(star)
-        #output += "Star size: %d\n" % SizeForStar[self.stardesc]
+
+        output += "Star size: %d\n" % SizeForStar[self.stardesc]
         #output += "Star color: %s\n" % ColorForStar[self.stardesc].show()
         return output
 
-    def distance(self, star):
-        """not working"""
-        factor = 16.05
-
-        x = star.x + (star.coordx - self.coordx)*128
-        y = star.y + (star.coordy - self.coordy)*128
-
-        print (star.coordx - self.coordx)
-        print (star.coordy - self.coordy)
-
-
-        z = star.z
-
-        dist = abs(self.x - x)**2 + abs(self.y - y)**2\
-            + abs(self.z - z)**2
-        dist = math.sqrt(dist) / factor
-
-        return dist
 
 class Seed:
-    def __init__(self,seed):
+    def __init__(self):
         self.s0 = 0
         self.s1 = 0
 
@@ -84,16 +55,16 @@ class Seed:
         self.s1 = c_ulong(c_ulong(tmp2 << 5).value | c_ulong(tmp2 >> 27).value).value
 
 
-
 class Galaxy:
 
     def __init__(self):
-        self.seed = Seed(1234)
+        self.seed = Seed()
 
         self.coords = []
 
         self.left = 0
         self.up = 0
+        self.into = 0
 
 
     def getDensity(self, coordx, coordy, galaxyScale):
@@ -150,20 +121,20 @@ class Galaxy:
         return p1
 
     def getSystemName(self, coordx, coordy, sysNum):
-        coordx = c_ulong(coordx + sysNum).value
-        coordy = c_ulong(coordy + coordx).value
-        coordx = ROL(coordx, 3)
+        coordx = coordx + sysNum
+        coordy = coordy + coordx
+        coordx = ROL(c_ushort(coordx).value, 3)
         coordx += coordy
-        coordy = ROL(coordy, 5)
+        coordy = ROL(c_ushort(coordy).value, 5)
         coordy += coordx
-        coordy = ROL(coordy, 4)
-        coordx = ROL(coordx, sysNum)
+        coordy = ROL(c_ushort(coordy).value, 4)
+        coordx = ROL(c_ushort(coordx).value, sysNum)
         coordx += coordy
 
         name = ""
         for i in range(3):
             name += namepart[(coordx >> 2) & 31]
-            coordx = ROR(coordx, 5)
+            coordx = ROR(c_ushort(coordx).value, 5)
         return name.capitalize()
 
 
@@ -190,10 +161,15 @@ class Galaxy:
             star.x = c_byte(c_ulong(self.seed.s0 & 0x0001fe).value >> 1).value
             star.x /= 2
 
+
             star.multiple = StarChance_Multiples[c_ulong(self.seed.s1 & 0x1f).value]
             star.stardesc = StarChance_Type[c_ulong(self.seed.s1 >> 16).value & 0x1f]
 
             star.sys_num = i
+            star.coordx = coordx
+            star.coordy = coordy
+            star.uid = (i<<26) + (coordy<<13) + (coordx)
+
             star.name = self.getSystemName(coordx, coordy, i)
 
             self.coords.append(star)
@@ -210,16 +186,16 @@ class Galaxy:
         for j in range(KnownSpaceNameOffset[Off+1] - KnownSpaceNameOffset[Off]):
             star = StarSystem()
 
-            star.uid = (j<<26) + (coordy<<13) + (coordx)
 
             star.x = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][0]
             star.y = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][1]
             star.z = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][2]
 
+            star.sys_num = j
             star.coordx = coordx
             star.coordy = coordy
-
-            star.sys_num = j
+            star.uid = (j<<26) + (coordy<<13) + (coordx)
+           
             star.stardesc = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][3]
             star.multiple = KnownSpaceStarCoords[KnownSpaceNameOffset[Off]+j][4]
 
@@ -233,41 +209,7 @@ class Galaxy:
         
         for starSystem in self.coords:
             print starSystem.info()
-
-#        #video = VideoDriver()
-#
-#        while 0:
-#            video.DoEvents()
-#            self.update(video.KeyStatus)
-#
-#            video.clock.tick(50)
-#            video.screen.fill((0,32,0))
-#
-#            coords = []
-#            for star in self.coords:
-#                coords.append((star.x, star.y, star.z))
-#            
-#            sector = Object3D()
-#            sector.addNodes(coords)
-#
-#            pv = ProjectionView(video.screen_size)
-#            pv.addModel('sector',sector)
-#
-#
-#            pv.translate('sector', 'x', self.left)
-#            pv.translate('sector', 'y', self.up)
-#           
-#
-#
-#            pv.display(video.screen)
-#            
-#            video.flush()
-
-    def update(self, KeyStatus):
-        if KeyStatus["Left"] and not KeyStatus["Right"]:
-            self.left += 1
-        if KeyStatus["Up"] and not KeyStatus["Down"]:
-            self.up += 1
+ 
     
 c = Galaxy()
-c.test(0, 3)
+c.test(-3, 0)
