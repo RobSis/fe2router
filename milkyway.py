@@ -22,7 +22,7 @@ StarDesc = [
     "Type'F'white star",     #  5
     "Type'A'hot white star", #  6
     "White dwarf star",      #  7 
-    "Red giant star"         #  8
+    "Red giant star",        #  8
                              # --
     "Bright giant star",     #  9
     "Type'B'hot blue star",  # 10
@@ -53,20 +53,20 @@ class RGB:
         return "RGB(%d, %d, %d)" % (self.x, self.y, self.z)
 
 ColorForStar = [
-    RGB(200,  0,  0),    # Type'M'flare star
-    RGB(200,  0,  0),    # Faint type'M'red star
-    RGB(200,  0,  0),    # Type'M'red star
-    RGB(200,136,  0),    # Type'K'orange star
-    RGB(200,200,  0),    # Type'G'yellow star
-    RGB(200,200,200),    # Type'F'white star
-    RGB(200,200,200),    # Type'A'hot white star
-    RGB(200,200,200),    # White dwarf star
-    RGB(200,  0,  0),    # Red giant star
-    RGB(200,200,200),    # Bright giant star
-    RGB(168,200,232),    # Type'B'hot blue star
-    RGB(192,136,  0),    # Supergiant star
-    RGB(168,200,232),    # Blue supergiant star
-    RGB(200,200,  0),    # Contact binary star
+    (200,  0,  0),    # Type'M'flare star
+    (200,  0,  0),    # Faint type'M'red star
+    (200,  0,  0),    # Type'M'red star
+    (200,136,  0),    # Type'K'orange star
+    (200,200,  0),    # Type'G'yellow star
+    (200,200,200),    # Type'F'white star
+    (200,200,200),    # Type'A'hot white star
+    (200,200,200),    # White dwarf star
+    (200,  0,  0),    # Red giant star
+    (200,200,200),    # Bright giant star
+    (168,200,232),    # Type'B'hot blue star
+    (192,136,  0),    # Supergiant star
+    (168,200,232),    # Blue supergiant star
+    (200,200,  0),    # Contact binary star
 ]
 
 namepart = [
