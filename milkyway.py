@@ -33,6 +33,14 @@ StarDesc = [
     "Contact binary star"    # 13
 ]
 
+StarMultiple = [
+    "Binary system", 
+    "Ternary system", 
+    "Quaternary system",
+    "Quintuple system",
+    "Sextuple system"
+]
+
 StarChance_Multiples = [
         0, 0, 0, 0, 0, 0, 0, 0,
         0, 0, 0, 0, 0, 0, 0, 0,
