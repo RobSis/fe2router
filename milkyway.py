@@ -69,7 +69,7 @@ ColorForStar = [
     (200,200,  0),    # Contact binary star
 ]
 
-namepart = [
+NamePart = [
     "en" , "la" , "can", "be" ,
     "and", "phi", "eth", "ol" ,
     "ve" , "ho" , "a"  , "lia",
