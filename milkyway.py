@@ -1,9 +1,12 @@
 # -*- coding: UTF-8 -*-
 #
 # This file comprises almost entirely from original data
-# dissasembled from game by Jongware
+# dissasembled from game by Jongware.
 #
 #
+
+SolX = 5912
+SolY = 5412
 
 StarChance_Type = [
     0, 0, 0, 1, 1, 1, 1, 1,
@@ -11,7 +14,6 @@ StarChance_Type = [
     2, 2, 2, 2, 2, 3, 3, 3,
     3, 4, 4, 4, 5, 6, 7, 8
 ]
-
 
 StarDesc = [
     "Type'M'flare star",     #  0
@@ -45,14 +47,8 @@ SizeForStar = [
     1400, 600
 ]
 
-class RGB:
-    def __init__(self, x = 0, y = 0, z = 0):
-        self.x, self.y, self.z = x, y, z
-
-    def show(self):
-        return "RGB(%d, %d, %d)" % (self.x, self.y, self.z)
-
 ColorForStar = [
+    #(R,   G,  B)
     (200,  0,  0),    # Type'M'flare star
     (200,  0,  0),    # Faint type'M'red star
     (200,  0,  0),    # Type'M'red star

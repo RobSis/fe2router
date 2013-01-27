@@ -1,10 +1,8 @@
 import math, random
 from ctypes import c_ulong, c_long, c_byte, c_ushort, c_uint
 
-from grid import GalaxyMap
-
 import milkyway as data
-
+from grid import GalaxyMap
 
 
 def ROR(x, n, bits=16):
@@ -16,8 +14,6 @@ def ROL(x, n, bits=16):
     return ROR(x, bits - n, bits)
 
 
-# Galaxy size: 8192x8192
-# Sol: (5912, 5412)
 class StarSystem:
     def __init__(self, x = 0, y = 0, z = 0):
         self.x, self.y, self.z = x, y, z
@@ -34,27 +30,26 @@ class StarSystem:
     # String representation (built-in)
     def __repr__(self):
         output = "Name: %s\n" % self.name
-        output += "Coordinates: [%d, %d, %d]\n" % (self.x,self.y,self.z)
+        output += "Coordinates: [%d, %d, %d]\n" % (self.x, self.y, self.z)
         output += "Star type: %s\n" % data.StarDesc[self.starType]
 
-        star = StarSystem(0, 16, -54)
-        star.coordx = 5912
-        star.coordy = 5412
+        #star = StarSystem(0, 16, -54)
+        #star.coordx = 5912
+        #star.coordy = 5412
+        #output += "Distance to Sol: %f\n" % self.distance(star)
 
-        output += "Star size: %d\n" % data.SizeForStar[self.starType]
-        output += "Distance to Sol: %f\n" % self.distance(star)
+        #output += "Star size: %d\n" % data.SizeForStar[self.starType]
         #output += "Star color: %s\n" % ColorForStar[self.starType].show()
         return output
 
     def distance(self, star):
         """experimental"""
-        x = star.x + (star.coordx - self.coordx)*126
-        y = star.y + (star.coordy - self.coordy)*126
- 
+        x = star.x + (star.coordx - self.coordx) * 126
+        y = star.y + (star.coordy - self.coordy) * 126
         z = star.z
  
-        dist = abs(self.x - x)**2 + abs(self.y - y)**2\
-            + abs(self.z - z)**2
+        dist = abs(self.x - x) ** 2 + abs(self.y - y) ** 2\
+            + abs(self.z - z) ** 2
         dist = math.sqrt(dist) / 16.0
         return dist
 
@@ -68,6 +63,11 @@ class Sector:
 
         # Nebulae, text, ...
         self.specialObject = None
+    
+    def __repr__(self):
+        output = "Sector [%d, %d]\n" % (self.coordx, self.coordy)
+        output += "Number of stars: %d\n" % len(self.stars)
+        return output
 
 class Galaxy:
     def __init__(self):
@@ -163,7 +163,7 @@ class Galaxy:
         self._rotate_some()
 
         number_of_systems = self._getDensity(coordx, coordy, 0)
-        for i in range(number_of_systems):            
+        for j in range(number_of_systems):            
             star = StarSystem()
 
             self._rotate_some()
@@ -178,11 +178,11 @@ class Galaxy:
             star.multiple = data.StarChance_Multiples[c_ulong(self.s1 & 0x1f).value]
             star.starType = data.StarChance_Type[c_ulong(self.s1 >> 16).value & 0x1f]
     
-            star.num = i
+            star.num = j
             star.coordx = coordx
             star.coordy = coordy
 
-            star.name = self._getSystemName(coordx, coordy, i)
+            star.name = self._getSystemName(coordx, coordy, j)
 
             sector.stars.append(star)
 
@@ -192,7 +192,7 @@ class Galaxy:
     def getSector(self, coordx, coordy):
         """Returns Sector()"""
                 
-        if ((coordx,coordy) not in data.KnownSpaceCoord):
+        if ((coordx, coordy) not in data.KnownSpaceCoord):
             return self._createSector(coordx, coordy)
         
         # Sector is from known universe
@@ -200,7 +200,7 @@ class Galaxy:
         sector.coordx = coordx
         sector.coordy = coordy
 
-        Off = data.KnownSpaceCoord.index((coordx,coordy))
+        Off = data.KnownSpaceCoord.index((coordx, coordy))
         for j in range(data.KnownSpaceNameOffset[Off+1] - data.KnownSpaceNameOffset[Off]):
             star = StarSystem()
 
@@ -208,52 +208,30 @@ class Galaxy:
             star.coordx = coordx
             star.coordy = coordy
 
-
-            starData = data.KnownSpaceStarCoords[data.KnownSpaceNameOffset[Off]+j]
+            starData = data.KnownSpaceStarCoords[data.KnownSpaceNameOffset[Off] + j]
             (star.x,star.y,star.z,star.starType,star.multiple) = starData
            
-            star.name = data.KnownSpace[data.KnownSpaceNameOffset[Off]+j]
+            star.name = data.KnownSpace[data.KnownSpaceNameOffset[Off] + j]
 
             sector.stars.append(star)
 
         return sector
 
         
-    def test(self, (centerX, centerY), width, height):
 
-        center = self.getSector(centerX, centerY)
-        for i in center.stars:
-            print i
-
-
-        map = GalaxyMap()
-
-        map.width = width
-        map.height = height
-
-        map.center = (centerX,centerY)
-
-        # Draw grid
-        map.grid()
-
-        # Draw sectors
-        rangeX = range(-width / 2, width / 2 + 1)
-        rangeY = range(-height / 2, height / 2  + 1)
-        rangeY.reverse()
-
-        for y in rangeY:
-            for x in rangeX:
-                sector = self.getSector(centerX + x,centerY + y)
-                map.sector(x+width / 2,y + width / 2, sector)
-        
-        map.save("/home/rob/Games/Pylot/test.png")
- 
-
-# startStar = [5912,5412,0] # Sol
-# endStar = [5909,5412,0]   # Tiafa
+# startStar = [0, 0] # Sol
+# endStar = [-3, 0] # Tiafa
 # hyper-jump range = 10ly
 # --------------
-# find the (shortest?) path
+# - find the (shortest?) path
+# - show it on the map
 
 c = Galaxy()
-c.test( (5912, 5412), 4, 4)
+map = GalaxyMap((800,800))
+
+#print c.getSector(5912,5412)
+
+map.grid = True
+map.labels = True
+
+map.save(c, (59, 14), 5, 5)
