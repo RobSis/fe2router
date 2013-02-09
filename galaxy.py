@@ -38,26 +38,26 @@ class StarSystem:
         if (self.multiple > 0):
             output += data.StarMultiple[self.multiple - 1] + "."
 
-        #star = StarSystem(0, 16, -54)
-        #star.coordx = 5912
-        #star.coordy = 5412
-        #output += "Distance to Sol: %f\n" % self.distance(star)
+        star = StarSystem(0, 16, -54)
+        star.coordx = 5911
+        star.coordy = 5412
+        output += "Distance to Sol: %f\n" % self.distance(star)
 
         #output += "Star size: %d\n" % data.SizeForStar[self.starType]
         #output += "Star color: %s\n" % ColorForStar[self.starType].show()
         return output
 
     def distance(self, star):
-        """experimental"""
-        x = star.x + (star.coordx - self.coordx)
-        y = star.y + (star.coordy - self.coordy)
+        """Differs from game a bit, 
+        probably due to implementation of sqrt, or rounding."""
+        x = star.x + (star.coordx - self.coordx) * 128
+        y = star.y + (star.coordy - self.coordy) * 128
         z = star.z
 
         dist = abs(self.x - x) ** 2 + abs(self.y - y) ** 2 + \
                abs(self.z - z) ** 2
-        dist = math.sqrt(dist) / 16.0
+        dist = math.sqrt(dist) / 16
         return dist
-
 
 class Sector:
     def __init__(self):
@@ -177,14 +177,14 @@ class Galaxy:
 
             self._rotate_some()
 
-            star.z = c_byte(c_ulong(self.s0 & 0xff0000).value >> 16).value
+            star.z = c_byte((self.s0 & 0xff0000) >> 16).value
             star.y = c_byte(self.s0 >> 8).value
             star.y /= 2
-            star.x = c_byte(c_ulong(self.s0 & 0x0001fe).value >> 1).value
+            star.x = c_byte((self.s0 & 0x0001fe) >> 1).value
             star.x /= 2
 
             star.multiple = data.StarChance_Multiples[self.s1 & 0x1f]
-            star.starType = data.StarChance_Type[self.s1 >> 16 & 0x1f]
+            star.starType = data.StarChance_Type[(self.s1 >> 16) & 0x1f]
 
             star.num = j
             star.coordx = coordx
@@ -209,10 +209,8 @@ class Galaxy:
         assert exquho.y == 3
         assert exquho.z == -6
 
-        #
         sec2 = c.getSector(data.SolX + 1008, data.SolY - 2260)
         q = sec2.stars[3]
-
         assert q.name == "Olackfa"
         assert q.starType == 6
         assert q.multiple == 4
@@ -256,14 +254,38 @@ class Galaxy:
 # --------------
 # - find the (shortest?) path
 # - show it on the map
+jumprange = 10
 
 c = Galaxy()
-
 c.sanityTest()
 
 map = GalaxyMap((800, 800))
 
-#print c.getSector(5912,5412)
+s1 = c.getSector(5912,5412)
+
+sol = s1.stars[0]
+s2 = c.getSector(5911,5412)
+s3 = c.getSector(5910,5412)
+s4 = c.getSector(5909,5412)
+
+tiafa = s4.stars[0]         
+
+graph = {}
+current = {'x' : sol.x, 'y' : sol.y, 'z' : sol.z, 'h' : 0}
+graph[current] = set()
+
+for i in filter(lambda s: s.distance(current) < jumprange, s1.stars):
+    if i not in graph:
+        graph[i] = set()
+
+    i.H = i.distance(current)
+
+    graph[i].add(current)
+    graph[current].add(i)
+
+for i in graph[s1.stars[0]]:
+    print i.name, ":", i.H
+
 
 map.grid = True
 map.labels = True

@@ -55,7 +55,7 @@ class GalaxyMap():
             label = " %d,%d" % (sector.coordx - data.SolX,
                                 sector.coordy - data.SolY)
             self.draw.text((factX * cx, self.screensize[1] - factY * (cy + 1)),
-                            label, fill="gray")
+                            label, fill="green")
 
         for star in sector.stars:
             absX = factX * (star.x + 63) / 126 + factX * cx
@@ -70,8 +70,11 @@ class GalaxyMap():
                           fill=color)  # Draw a circle
 
             if (self.labels):
-                self.draw.text((absX + 3, absY + 3), star.name, fill="black")
-                self.draw.text((absX + 3, absY + 3), star.name, fill="white")
+                self.draw.text((absX + size + 1, absY - size / 2),
+                                star.name, fill="black")
+
+                self.draw.text((absX + size, absY - size / 2),
+                                star.name, fill="white")
 
     def save(self, galaxy, (cx, cy), width, height):
         """Generate the map and save to PNG file."""
@@ -95,4 +98,4 @@ class GalaxyMap():
                 sector = galaxy.getSector(centerX + x, centerY + y)
                 self._sector(sector)
 
-        self.im.save("/home/rob/Games/Pylot/test.png", 'PNG')
+        self.im.save("/home/rob/Games/Pylot/map.png", 'PNG')
