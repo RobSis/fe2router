@@ -17,17 +17,32 @@ def ROL(x, n, bits=16):
     return ROR(x, bits - n, bits)
 
 
-class StarSystem:
+class StarSystem(object):
     def __init__(self, x=0, y=0, z=0):
-        self.x, self.y, self.z = x, y, z
+        if (isinstance(x, StarSystem)):
+            # copy constructor
+            self.x, self.y, self.z = x.x, x.y, x.z
 
-        self.coordx = 0
-        self.coordy = 0
-        self.num = 0
+            self.coordx = x.coordx
+            self.coordy = x.coordy
+            self.num = x.num
 
-        self.name = ""
-        self.starType = 0
-        self.multiple = 0
+            self.name = x.name
+            self.starType = x.starType
+            self.multiple = x.multiple
+        else:
+            self.x, self.y, self.z = x, y, z
+
+            self.coordx = 0
+            self.coordy = 0
+            self.num = 0
+
+            self.name = ""
+            self.starType = 0
+            self.multiple = 0
+
+    def uid(self):
+        return (self.num << 26) + (self.coordy << 13) + self.coordx
 
     # String representation (built-in)
     def __repr__(self):
@@ -38,17 +53,12 @@ class StarSystem:
         if (self.multiple > 0):
             output += data.StarMultiple[self.multiple - 1] + "."
 
-        star = StarSystem(0, 16, -54)
-        star.coordx = 5911
-        star.coordy = 5412
-        output += "Distance to Sol: %f\n" % self.distance(star)
-
         #output += "Star size: %d\n" % data.SizeForStar[self.starType]
         #output += "Star color: %s\n" % ColorForStar[self.starType].show()
         return output
 
     def distance(self, star):
-        """Differs from game a bit, 
+        """Differs from game a bit,
         probably due to implementation of sqrt, or rounding."""
         x = star.x + (star.coordx - self.coordx) * 128
         y = star.y + (star.coordy - self.coordy) * 128
@@ -58,6 +68,7 @@ class StarSystem:
                abs(self.z - z) ** 2
         dist = math.sqrt(dist) / 16
         return dist
+
 
 class Sector:
     def __init__(self):
@@ -72,7 +83,6 @@ class Sector:
 
     def __repr__(self):
         output = "Sector [%d, %d]\n" % (self.coordx, self.coordy)
-        output += "Number of stars: %d\n" % len(self.stars)
         return output
 
 
@@ -247,47 +257,3 @@ class Galaxy:
             sector.stars.append(star)
 
         return sector
-
-# startStar = [0, 0] # Sol
-# endStar = [-3, 0] # Tiafa
-# hyper-jump range = 10ly
-# --------------
-# - find the (shortest?) path
-# - show it on the map
-jumprange = 10
-
-c = Galaxy()
-c.sanityTest()
-
-map = GalaxyMap((800, 800))
-
-s1 = c.getSector(5912,5412)
-
-sol = s1.stars[0]
-s2 = c.getSector(5911,5412)
-s3 = c.getSector(5910,5412)
-s4 = c.getSector(5909,5412)
-
-tiafa = s4.stars[0]         
-
-graph = {}
-current = {'x' : sol.x, 'y' : sol.y, 'z' : sol.z, 'h' : 0}
-graph[current] = set()
-
-for i in filter(lambda s: s.distance(current) < jumprange, s1.stars):
-    if i not in graph:
-        graph[i] = set()
-
-    i.H = i.distance(current)
-
-    graph[i].add(current)
-    graph[current].add(i)
-
-for i in graph[s1.stars[0]]:
-    print i.name, ":", i.H
-
-
-map.grid = True
-map.labels = True
-
-map.save(c, (-3, 0), 5, 5)
