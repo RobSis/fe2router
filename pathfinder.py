@@ -1,3 +1,5 @@
+# Licensed under the terms of the GPL v3. See LICENCE for details
+
 from galaxy import StarSystem
 import math
 

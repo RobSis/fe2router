@@ -1,3 +1,5 @@
+# Licensed under the terms of the GPL v3. See LICENCE for details
+
 import sys
 
 from PIL import Image, ImageDraw
@@ -24,7 +26,7 @@ class GalaxyMap():
         # List of stars representing the path
         self.path = []
 
-        self.im = Image.new('RGBA', self.screensize, conf.BGCOLOR)
+        self.im = Image.new(conf.COLORMODE, self.screensize, conf.BGCOLOR)
         self.draw = ImageDraw.Draw(self.im)  # Create a draw object
 
     def _grid(self):
@@ -127,4 +129,4 @@ class GalaxyMap():
         if (self.path != None and len(self.path) > 0):
             self._path()
 
-        self.im.save("/home/rob/Games/Pylot/map.png", 'PNG')
+        self.im.save(conf.OUTPUT, conf.FORMAT)

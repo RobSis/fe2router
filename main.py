@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# Licensed under the terms of the GPL v3. See LICENCE for details
+
 from galaxy import Galaxy
 from grid import GalaxyMap
 from pathfinder import find_path

@@ -1,3 +1,5 @@
+# Licensed under the terms of the GPL v3. See LICENCE for details
+
 import math
 import random
 from ctypes import c_ulong, c_long, c_byte, c_ushort, c_uint

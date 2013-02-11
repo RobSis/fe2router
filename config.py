@@ -1,11 +1,17 @@
+# Licensed under the terms of the GPL v3. See LICENCE for details
+
 WIDTH = 4
 HEIGHT = 4
 
 SCREENWIDTH = 800
 SCREENHEIGHT = 800
 
+FORMAT = "PNG"
+OUTPUT = "map." + FORMAT.lower()
+
 # colors
-BGCOLOR = (16, 32, 112, 255)
+COLORMODE = "RGB"  # RGBA
+BGCOLOR = (16, 32, 112)
 GRID = "darkgreen"
 GRID2 = "lightgreen"
 COORDS = "green"
