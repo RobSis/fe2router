@@ -2,13 +2,6 @@ from galaxy import StarSystem
 import math
 
 
-class AStarNode(object):
-    def __init__(self):
-        self.g = 0
-        self.h = 0
-        self.parent = None
-
-
 class AStar(object):
     def __init__(self, graph):
         self.graph = graph
