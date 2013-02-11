@@ -3,6 +3,8 @@
 WIDTH = 4
 HEIGHT = 4
 
+RANGE = 10  # default jump range
+
 SCREENWIDTH = 800
 SCREENHEIGHT = 800
 

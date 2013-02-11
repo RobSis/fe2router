@@ -1,11 +1,12 @@
 # Licensed under the terms of the GPL v3. See LICENCE for details
+# This file contains pseduo-randomizing algorithms dissasembled
+# from original Atari ST binary of Frontier: Elite II.
 
 import math
 import random
 from ctypes import c_ulong, c_long, c_byte, c_ushort, c_uint
 
 import milkyway as data
-from grid import GalaxyMap
 
 
 def ROR(x, n, bits=16):

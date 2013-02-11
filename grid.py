@@ -1,8 +1,8 @@
 # Licensed under the terms of the GPL v3. See LICENCE for details
 
 import sys
-
 from PIL import Image, ImageDraw
+
 import milkyway as data
 import config as conf
 
@@ -104,7 +104,7 @@ class GalaxyMap():
 
             prevX, prevY = absX, absY
 
-    def save(self, galaxy, (cx, cy), width, height):
+    def save(self, galaxy, (cx, cy), (width, height)):
         """Generate the map and save to PNG file."""
 
         centerX = data.SolX + cx

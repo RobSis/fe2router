@@ -1,7 +1,8 @@
 # Licensed under the terms of the GPL v3. See LICENCE for details
 
-from galaxy import StarSystem
 import math
+
+from galaxy import StarSystem
 
 
 class AStar(object):
@@ -62,7 +63,7 @@ class AStarSpace(AStar):
 
 def select_sectors((x0, y0), (x1, y1)):
     # select sectors (Bresenham's algorithm)
-    # thickness of line should be dependend on jumpRange...
+    # TODO: thickness of line should be dependend on jumpRange...
 
     dx = abs(x1 - x0)
     dy = abs(y1 - y0)
