@@ -1,8 +1,10 @@
 # Licensed under the terms of the GPL v3. See LICENCE for details
 
 import math
+from itertools import product
 
 from galaxy import StarSystem
+from milkyway import SolX, SolY
 
 
 class AStar(object):
@@ -18,7 +20,7 @@ class AStar(object):
         current = start
         openset.add(current)
         while openset:
-            current = min(openset, key=lambda o: o.g + o.h)
+            current = min(openset, key=lambda o: o.h)
             if current == end:
                 path = []
                 while current.parent:
@@ -31,27 +33,20 @@ class AStar(object):
             for node in self.graph[current]:
                 if node in closedset:
                     continue
-                if node in openset:
-                    new_g = current.g
-                    if node.g > new_g:
-                        node.g = new_g
-                        node.parent = current
-                else:
-                    node.g = current.g
+                if node not in openset:
                     node.h = self.heuristic(node, start, end)
                     node.parent = current
                     openset.add(node)
         return None
 
 
-class StarNode(StarSystem):
+class AStarNode(StarSystem):
     def __init__(self, star, x, y, z):
         self.ax, self.ay, self.az = x, y, z
         self.h = 0
-        self.g = 0
         self.parent = None
 
-        super(StarNode, self).__init__(star)
+        super(AStarNode, self).__init__(star)
 
 
 class AStarSpace(AStar):
@@ -97,29 +92,29 @@ def select_sectors((x0, y0), (x1, y1)):
     return sectors
 
 
-#create adjacency list
-def make_graph(g, startSector, endSector, jumpRange):
-    sectors = select_sectors((startSector.coordx, startSector.coordy),
-                             (endSector.coordx, endSector.coordy))
+# create adjacency list
+def make_graph(g, start, end, jumpRange):
+    sectors = select_sectors((start.coordx, start.coordy),
+                             (end.coordx, end.coordy))
 
     graph = {}
     nodes = []
 
-    start = None
-    end = None
+    startNode = None
+    endNode = None
 
     for coordx, coordy in sectors:
         sector = g.getSector(coordx, coordy)
         for star in sector.stars:
-            fx = (startSector.coordx - sector.coordx) * 128
-            fy = (startSector.coordy - sector.coordy) * 128
+            fx = (start.coordx - sector.coordx) * 128
+            fy = (start.coordy - sector.coordy) * 128
 
-            t = StarNode(star, star.x - fx, star.y - fy, star.z)
+            t = AStarNode(star, star.x - fx, star.y - fy, star.z)
 
-            if (star.uid() == startSector.uid()):
-                start = t
-            if (star.uid() == endSector.uid()):
-                end = t
+            if (star.uid() == start.uid()):
+                startNode = t
+            if (star.uid() == end.uid()):
+                endNode = t
 
             nodes.append(t)
 
@@ -129,10 +124,21 @@ def make_graph(g, startSector, endSector, jumpRange):
                                    (n.az - s.az) ** 2) / 16.0 <= jumpRange
         graph[n] = filter(dist, nodes)
 
-    return graph, nodes, start, end
+    return graph, nodes, startNode, endNode
 
 
 def find_path(g, start, end, jumpRange):
     graph, nodes, start, end = make_graph(g, start, end, jumpRange)
     paths = AStarSpace(graph)
     return paths.search(start, end)
+
+
+def find_star(g, address):
+    name, coords = address.split(':')
+    cx, cy = coords.split(',')
+
+    for s in g.getSector(SolX + int(cx), SolY + int(cy)).stars:
+        if (s.name.lower() == name.lower()):
+            return s
+
+    return None

@@ -98,9 +98,19 @@ class GalaxyMap():
             absY = factY * (star.y + 63) / 126 + factY * cy
             absY = self.screensize[1] - absY
 
+            size = round(20 * data.SizeForStar[star.starType] / 1400)
+
             if (prevX != None and prevY != None):
                 self.draw.line((prevX, prevY, absX, absY),
                                 fill=conf.PATH)
+                
+            if (self.pathLabels):
+                self.draw.text((absX + size + 1, absY - size / 2),
+                                star.name, fill="black")
+
+                self.draw.text((absX + size, absY - size / 2),
+                                star.name, fill=conf.PATH)
+
 
             prevX, prevY = absX, absY
 

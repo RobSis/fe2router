@@ -5,7 +5,7 @@ import sys
 import argparse
 
 from galaxy import Galaxy
-from pathfinder import find_path
+from pathfinder import find_path, find_star
 import config as conf
 try:
     from grid import GalaxyMap
@@ -69,15 +69,17 @@ if __name__ == "__main__":
     c = Galaxy()
     c.sanityTest()
 
-    sector1 = c.getSector(5912, 5412)
-    sector2 = c.getSector(5908, 5412)
+    start = find_star(c, args.start)
+    if (start == None):
+        print args.start + " not found!"
+        sys.exit(1)
 
-    # c.findStar(args.start)
-    # c.findStar(args.end)
-    sol = sector1.stars[0]
-    tiafa = sector2.stars[0]
+    end = find_star(c, args.end)
+    if (end == None):
+        print args.end + " not found!"
+        sys.exit(1)
 
-    path = find_path(c, sol, tiafa, jumpRange)
+    path = find_path(c, start, end, jumpRange)
 
     prevStep = None
     if path is not None:
@@ -89,15 +91,24 @@ if __name__ == "__main__":
             print
             prevStep = step
 
+    #print find_star(c, "Essquess")
+
     if (pil):
         map = GalaxyMap(scrSize)
 
         map.grid = True
-        map.labels = True
+        map.labels = False
         map.path = path
+        map.pathLabels = True
 
         if (mapSize == (0, 0)):
             # TODO #2 determine mapSize, so the whole path can be seen
-            mapSize = (7, 7)
+            x = abs(start.coordx - end.coordx) + 1
+            y = abs(start.coordy - end.coordy) + 1
+            
+            cx = int((start.coordx + end.coordx) / 2.0 - 5912)
+            cy = int((start.coordy + end.coordy) / 2.0 - 5412)
 
-        map.save(c, (0, 0), mapSize)
+            mapSize = (max(x, y), max(x, y))
+
+        map.save(c, (cx, cy), mapSize)

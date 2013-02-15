@@ -223,6 +223,8 @@ class Galaxy:
         assert exquho.z == -6
 
         sec2 = c.getSector(data.SolX + 1008, data.SolY - 2260)
+        assert len(sec2.stars) == 6
+       
         q = sec2.stars[3]
         assert q.name == "Olackfa"
         assert q.starType == 6
